@@ -8,8 +8,8 @@ const PORT = process.env.PORT || 3000;
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
 
 /**
- * Webhook verification (REQUIRED)
- * Meta calls this once when you save the webhook
+ * Webhook verification (GET)
+ * Meta calls this when you save the webhook
  */
 app.get("/webhook/instagram", (req, res) => {
   const mode = req.query["hub.mode"];
@@ -26,7 +26,15 @@ app.get("/webhook/instagram", (req, res) => {
 });
 
 /**
- * Incoming Instagram events (DMs, etc.)
+ * HEAD requests (health checks / preflight)
+ * Meta may send these
+ */
+app.head("/webhook/instagram", (req, res) => {
+  return res.sendStatus(200);
+});
+
+/**
+ * Incoming Instagram events (POST)
  */
 app.post("/webhook/instagram", (req, res) => {
   try {
