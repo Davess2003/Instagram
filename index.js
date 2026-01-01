@@ -7,12 +7,7 @@ app.use(express.json());
 const PORT = process.env.PORT || 3000;
 
 /**
- * External Request endpoint
- * Used by Automation tools (ManyChat / etc.)
- */
-
-/**
- * HEAD requests (health check / preflight)
+ * HEAD requests (ManyChat health check)
  * MUST return 200 with no body
  */
 app.head("/webhook/instagram", (req, res) => {
@@ -21,22 +16,13 @@ app.head("/webhook/instagram", (req, res) => {
 });
 
 /**
- * POST requests (actual message payload)
+ * POST requests (ManyChat External Request)
  */
 app.post("/webhook/instagram", (req, res) => {
   try {
     console.log("📩 External Request received");
     console.log("Headers:", req.headers);
     console.log("Body:", JSON.stringify(req.body, null, 2));
-
-    /**
-     * Example expected body:
-     * {
-     *   "user_id": "123456",
-     *   "username": "john_doe",
-     *   "message": "Hello"
-     * }
-     */
 
     const { user_id, message } = req.body || {};
 
@@ -45,11 +31,19 @@ app.post("/webhook/instagram", (req, res) => {
       console.log("Message:", message);
     }
 
-    // ALWAYS respond 200 fast
-    return res.sendStatus(200);
+    // ✅ VALID ManyChat empty response
+    return res.status(200).json({
+      version: "v2"
+      // no content = no message sent
+    });
+
   } catch (err) {
     console.error("❌ Error handling request:", err);
-    return res.sendStatus(200); // never fail
+
+    // NEVER fail automation
+    return res.status(200).json({
+      version: "v2"
+    });
   }
 });
 
