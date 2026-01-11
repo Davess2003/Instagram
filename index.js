@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3000;
 const MANYCHAT_API_KEY = process.env.MANYCHAT_API_KEY;
 
 /**
- * HEAD requests (ManyChat health check)
+ * HEAD requests (ManyChat health)
  */
 app.head("/webhook/instagram", (req, res) => {
   return res.sendStatus(200);
