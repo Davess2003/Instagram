@@ -23,7 +23,12 @@ app.post("/webhook/instagram", async (req, res) => {
     console.log("📩 External Request received");
     console.log(JSON.stringify(req.body, null, 2));
 
-    const { user_id, message } = req.body || {};
+    let { user_id, message } = req.body || {};
+
+    // ✅ REMOVE LEADING # FROM USER ID (e.g. #11211324 → 11211324)
+    if (typeof user_id === "string") {
+      user_id = user_id.replace(/^#/, "");
+    }
 
     if (user_id && message) {
       console.log(`👤 From user ${user_id}: ${message}`);
@@ -62,7 +67,7 @@ app.listen(PORT, () => {
 async function sendMessage(contactId, message) {
   try {
     const response = await axios.post(
-      'https://api.manychat.com/fb/sending/sendContent',
+      "https://api.manychat.com/fb/sending/sendContent",
       {
         subscriber_id: contactId,
         data: {
@@ -80,7 +85,7 @@ async function sendMessage(contactId, message) {
       {
         headers: {
           Authorization: `Bearer ${MANYCHAT_API_KEY}`,
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json"
         }
       }
     );
