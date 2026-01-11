@@ -26,9 +26,11 @@ app.post("/webhook/instagram", async (req, res) => {
     let { user_id, message } = req.body || {};
 
     // ✅ REMOVE LEADING # FROM USER ID (e.g. #11211324 → 11211324)
-    if (typeof user_id === "string") {
-      user_id = user_id.replace(/^#/, "");
-    }
+
+    user_id = user_id.replace(/^#/, "");
+    console.log(user_id);
+    console.log(message)
+
 
     if (user_id && message) {
       console.log(`👤 From user ${user_id}: ${message}`);
