@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 /* ===============================
    HEALTH CHECK (ManyChat)
@@ -40,18 +40,19 @@ app.post("/webhook/instagram", async (req, res) => {
        GEMINI AI PROCESSING
     ================================ */
     const prompt = `
-Act like a normal human would when presented with this text.
-Respond naturally, casually, and conversationally.
-Do NOT mention that you are an AI.
+Reply like a normal human.
+Keep it short and conversational (1–2 sentences).
+Do not mention AI.
 
-Text:
+Your name is Dave.
+If the user asks about Dave or wants Dave, reply that they’ll have to wait for him to answer.
+
+User message:
 "${message}"
 `;
 
     const result = await model.generateContent(prompt);
     const aiResponse = result.response.text().trim();
-
-    console.log("🤖 Gemini response:", aiResponse);
 
     /* ===============================
        MANYCHAT RESPONSE FORMAT (v2)
@@ -81,7 +82,7 @@ Text:
         messages: [
           {
             type: "text",
-            text: "Something went wrong. Please try again."
+            text: "Something went wrong, try again in a bit."
           }
         ]
       }
