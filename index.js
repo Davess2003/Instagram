@@ -32,7 +32,7 @@ app.post("/webhook/instagram", async (req, res) => {
       /* ===============================
          AI PROCESSING
       ================================ */
-      const aiResponse = `AI processed: "${message}"`;
+      const aiResponse = `Im tryna test this AI shit rn: Im guessing u said "${message}"`;
 
       /* ===============================
          MANYCHAT RESPONSE FORMAT (v2)
