@@ -1,4 +1,5 @@
 const express = require("express");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const app = express();
 app.use(express.json());
@@ -7,6 +8,10 @@ app.use(express.json());
    CONFIG
 ================================ */
 const PORT = process.env.PORT || 3000;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
 /* ===============================
    HEALTH CHECK (ManyChat)
@@ -25,45 +30,61 @@ app.post("/webhook/instagram", async (req, res) => {
 
     const { contact_id, message } = req.body || {};
 
-    // If valid Instagram message
-    if (contact_id && message) {
-      console.log(`👤 From Instagram user ${contact_id}: ${message}`);
-
-      /* ===============================
-         AI PROCESSING
-      ================================ */
-      const aiResponse = `Im tryna test this AI shit rn: Im guessing u said "${message}"`;
-
-      /* ===============================
-         MANYCHAT RESPONSE FORMAT (v2)
-      ================================ */
-      return res.status(200).json({
-        version: "v2",
-        content: {
-          type: "instagram",
-          messages: [
-            {
-              type: "text",
-              text: aiResponse
-            }
-          ],
-          actions: [],
-          quick_replies: []
-        }
-      });
+    if (!contact_id || !message) {
+      return res.status(200).json({ version: "v2" });
     }
 
-    // Fallback response (required by ManyChat)
+    console.log(`👤 From Instagram user ${contact_id}: ${message}`);
+
+    /* ===============================
+       GEMINI AI PROCESSING
+    ================================ */
+    const prompt = `
+Act like a normal human would when presented with this text.
+Respond naturally, casually, and conversationally.
+Do NOT mention that you are an AI.
+
+Text:
+"${message}"
+`;
+
+    const result = await model.generateContent(prompt);
+    const aiResponse = result.response.text().trim();
+
+    console.log("🤖 Gemini response:", aiResponse);
+
+    /* ===============================
+       MANYCHAT RESPONSE FORMAT (v2)
+    ================================ */
     return res.status(200).json({
-      version: "v2"
+      version: "v2",
+      content: {
+        type: "instagram",
+        messages: [
+          {
+            type: "text",
+            text: aiResponse
+          }
+        ],
+        actions: [],
+        quick_replies: []
+      }
     });
 
   } catch (error) {
     console.error("❌ Instagram Webhook Error:", error);
 
-    // Always respond 200 for ManyChat
     return res.status(200).json({
-      version: "v2"
+      version: "v2",
+      content: {
+        type: "instagram",
+        messages: [
+          {
+            type: "text",
+            text: "Something went wrong. Please try again."
+          }
+        ]
+      }
     });
   }
 });
