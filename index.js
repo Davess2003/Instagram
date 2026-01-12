@@ -8,6 +8,9 @@ app.use(express.json());
 const PORT = process.env.PORT || 3000;
 const MANYCHAT_API_KEY = process.env.MANYCHAT_API_KEY;
 
+// 👇 CHANGE THIS TO YOUR EXISTING MANYCHAT TAG NAME
+const TAG_NAME = "CUSTOMER_SUPPORT";
+
 /**
  * HEAD requests (ManyChat health)
  */
@@ -25,29 +28,34 @@ app.post("/webhook/instagram", async (req, res) => {
 
     let { contact_id, message } = req.body || {};
 
-    // ✅ REMOVE LEADING # FROM USER ID (e.g. #11211324 → 11211324)
-
-    user_id = contact_id.replace(/^#/, "");
+    // ✅ REMOVE LEADING #
+    const user_id = contact_id?.replace(/^#/, "");
     console.log(user_id);
-    console.log(message)
-
+    console.log(message);
 
     if (user_id && message) {
       console.log(`👤 From user ${user_id}: ${message}`);
 
-      // 🔁 AUTO REPLY LOGIC
-      const replyText = `You said: "${message}"`;
+      // 1️⃣ GET EXISTING TAG ID FROM MANYCHAT
+      const tagId = await getTagIdByName(TAG_NAME);
 
+      // 2️⃣ APPLY TAG IF IT EXISTS
+      if (tagId) {
+        await addTagToUser(user_id, tagId);
+      } else {
+        console.warn(`⚠️ Tag not found: ${TAG_NAME}`);
+      }
+
+      // 3️⃣ SEND REPLY
+      const replyText = `You said: "${message}"`;
       await sendMessage(user_id, replyText);
     }
 
-    // ✅ ManyChat requires this exact response
+    // ✅ Required by ManyChat
     return res.status(200).json({ version: "v2" });
 
   } catch (err) {
     console.error("❌ Error:", err);
-
-    // ❗ Never break ManyChat automation
     return res.status(200).json({ version: "v2" });
   }
 });
@@ -64,11 +72,69 @@ app.listen(PORT, () => {
 });
 
 /**
+ * GET TAG ID BY NAME (NO ID GENERATION)
+ */
+async function getTagIdByName(tagName) {
+  try {
+    const res = await axios.get(
+      "https://api.manychat.com/fb/page/getTags",
+      {
+        headers: {
+          Authorization: `Bearer ${MANYCHAT_API_KEY}`,
+        },
+      }
+    );
+
+    const tag = res.data?.data?.find(
+      t => t.name === tagName
+    );
+
+    return tag ? tag.id : null;
+
+  } catch (error) {
+    console.error(
+      "❌ Get tags error:",
+      error.response?.data || error.message
+    );
+    return null;
+  }
+}
+
+/**
+ * ADD EXISTING TAG TO USER
+ */
+async function addTagToUser(contactId, tagId) {
+  try {
+    await axios.post(
+      "https://api.manychat.com/fb/subscriber/addTag",
+      {
+        subscriber_id: contactId,
+        tag_id: tagId,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${MANYCHAT_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log(`🏷️ Tag "${TAG_NAME}" applied to ${contactId}`);
+
+  } catch (error) {
+    console.error(
+      "❌ Add tag error:",
+      error.response?.data || error.message
+    );
+  }
+}
+
+/**
  * SEND MESSAGE TO MANYCHAT USER
  */
 async function sendMessage(contactId, message) {
   try {
-    const response = await axios.post(
+    await axios.post(
       "https://api.manychat.com/fb/sending/sendContent",
       {
         subscriber_id: contactId,
