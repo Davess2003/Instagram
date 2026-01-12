@@ -8,8 +8,8 @@ app.use(express.json());
 const PORT = process.env.PORT || 3000;
 const MANYCHAT_API_KEY = process.env.MANYCHAT_API_KEY;
 
-// 👇 CHANGE THIS TO YOUR EXISTING MANYCHAT TAG NAME
-const TAG_NAME = "CUSTOMER_SUPPORT";
+// ✅ EXISTING MANYCHAT TAG
+const TAG_ID = 79222221; // Customer Support
 
 /**
  * HEAD requests (ManyChat health)
@@ -36,17 +36,10 @@ app.post("/webhook/instagram", async (req, res) => {
     if (user_id && message) {
       console.log(`👤 From user ${user_id}: ${message}`);
 
-      // 1️⃣ GET EXISTING TAG ID FROM MANYCHAT
-      const tagId = await getTagIdByName(TAG_NAME);
+      // 1️⃣ APPLY EXISTING TAG (ID ONLY)
+      await addTagToUser(user_id);
 
-      // 2️⃣ APPLY TAG IF IT EXISTS
-      if (tagId) {
-        await addTagToUser(user_id, tagId);
-      } else {
-        console.warn(`⚠️ Tag not found: ${TAG_NAME}`);
-      }
-
-      // 3️⃣ SEND REPLY
+      // 2️⃣ SEND REPLY
       const replyText = `You said: "${message}"`;
       await sendMessage(user_id, replyText);
     }
@@ -72,44 +65,15 @@ app.listen(PORT, () => {
 });
 
 /**
- * GET TAG ID BY NAME (NO ID GENERATION)
- */
-async function getTagIdByName(tagName) {
-  try {
-    const res = await axios.get(
-      "https://api.manychat.com/fb/page/getTags",
-      {
-        headers: {
-          Authorization: `Bearer ${MANYCHAT_API_KEY}`,
-        },
-      }
-    );
-
-    const tag = res.data?.data?.find(
-      t => t.name === tagName
-    );
-
-    return tag ? tag.id : null;
-
-  } catch (error) {
-    console.error(
-      "❌ Get tags error:",
-      error.response?.data || error.message
-    );
-    return null;
-  }
-}
-
-/**
  * ADD EXISTING TAG TO USER
  */
-async function addTagToUser(contactId, tagId) {
+async function addTagToUser(contactId) {
   try {
     await axios.post(
       "https://api.manychat.com/fb/subscriber/addTag",
       {
         subscriber_id: contactId,
-        tag_id: tagId,
+        tag_id: TAG_ID, // ✅ EXISTING TAG ID
       },
       {
         headers: {
@@ -119,7 +83,7 @@ async function addTagToUser(contactId, tagId) {
       }
     );
 
-    console.log(`🏷️ Tag "${TAG_NAME}" applied to ${contactId}`);
+    console.log(`🏷️ Tag "Customer Support" (ID: ${TAG_ID}) applied to ${contactId}`);
 
   } catch (error) {
     console.error(
