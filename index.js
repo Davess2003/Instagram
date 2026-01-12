@@ -23,11 +23,11 @@ app.post("/webhook/instagram", async (req, res) => {
     console.log("📩 External Request received");
     console.log(JSON.stringify(req.body, null, 2));
 
-    let { user_id, message } = req.body || {};
+    let { contact_id, message } = req.body || {};
 
     // ✅ REMOVE LEADING # FROM USER ID (e.g. #11211324 → 11211324)
 
-    user_id = user_id.replace(/^#/, "");
+    user_id = contact_id.replace(/^#/, "");
     console.log(user_id);
     console.log(message)
 
