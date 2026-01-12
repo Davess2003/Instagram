@@ -40,7 +40,7 @@ app.post("/webhook/instagram", async (req, res) => {
       await addTagToUser(user_id);
 
       // 2️⃣ SEND REPLY
-      const replyText = `You said: "${message}"`;
+      const replyText = `Im automating this bullshit again, did you say: "${message}"`;
       await sendMessage(user_id, replyText);
     }
 
@@ -102,6 +102,7 @@ async function sendMessage(contactId, message) {
       "https://api.manychat.com/fb/sending/sendContent",
       {
         subscriber_id: contactId,
+        message_tag: "79222221", // ✅ REQUIRED MESSAGE TAG ID
         data: {
           version: "v2",
           content: {
@@ -130,3 +131,4 @@ async function sendMessage(contactId, message) {
     );
   }
 }
+
