@@ -13,7 +13,7 @@ const mistral = new Mistral({
   apiKey: process.env.MISTRAL_API_KEY
 });
 
-const MODEL = "mistral-small-3.2";
+const MODEL = "mistral-small-latest";
 
 /* ===============================
    HEALTH CHECK (ManyChat)
