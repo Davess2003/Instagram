@@ -1,5 +1,5 @@
 const express = require("express");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const MistralClient = require("@mistralai/mistralai");
 
 const app = express();
 app.use(express.json());
@@ -8,10 +8,14 @@ app.use(express.json());
    CONFIG
 ================================ */
 const PORT = process.env.PORT || 3000;
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
 
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+const mistral = new MistralClient({
+  apiKey: MISTRAL_API_KEY
+});
+
+// Good free-tier model
+const MODEL = "mistral-small";
 
 /* ===============================
    HEALTH CHECK (ManyChat)
@@ -37,7 +41,7 @@ app.post("/webhook/instagram", async (req, res) => {
     console.log(`👤 From Instagram user ${contact_id}: ${message}`);
 
     /* ===============================
-       GEMINI AI PROCESSING
+       MISTRAL AI PROCESSING
     ================================ */
     const prompt = `
 Reply like a normal human.
@@ -49,10 +53,20 @@ If the user asks about Dave or wants Dave, reply that they’ll have to wait for
 
 User message:
 "${message}"
-`;
+    `;
 
-    const result = await model.generateContent(prompt);
-    const aiResponse = result.response.text().trim();
+    const chatResponse = await mistral.chat({
+      model: MODEL,
+      messages: [
+        { role: "system", content: "You are a helpful human assistant." },
+        { role: "user", content: prompt }
+      ],
+      temperature: 0.7
+    });
+
+    const aiResponse =
+      chatResponse.choices?.[0]?.message?.content?.trim() ||
+      "Sorry, I didn’t catch that.";
 
     /* ===============================
        MANYCHAT RESPONSE FORMAT (v2)
