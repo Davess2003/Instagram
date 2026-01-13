@@ -1,5 +1,5 @@
 const express = require("express");
-const MistralClient = require("@mistralai/mistralai");
+const { Mistral } = require("@mistralai/mistralai");
 
 const app = express();
 app.use(express.json());
@@ -8,14 +8,12 @@ app.use(express.json());
    CONFIG
 ================================ */
 const PORT = process.env.PORT || 3000;
-const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
 
-const mistral = new MistralClient({
-  apiKey: MISTRAL_API_KEY
+const mistral = new Mistral({
+  apiKey: process.env.MISTRAL_API_KEY
 });
 
-// Good free-tier model
-const MODEL = "mistral-small";
+const MODEL = "mistral-small-3.2";
 
 /* ===============================
    HEALTH CHECK (ManyChat)
@@ -29,20 +27,12 @@ app.head("/webhook/instagram", (req, res) => {
 ================================ */
 app.post("/webhook/instagram", async (req, res) => {
   try {
-    console.log("📩 Instagram Dynamic Block received");
-    console.log(JSON.stringify(req.body, null, 2));
-
     const { contact_id, message } = req.body || {};
 
     if (!contact_id || !message) {
       return res.status(200).json({ version: "v2" });
     }
 
-    console.log(`👤 From Instagram user ${contact_id}: ${message}`);
-
-    /* ===============================
-       MISTRAL AI PROCESSING
-    ================================ */
     const prompt = `
 Reply like a normal human.
 Keep it short and conversational (1–2 sentences).
@@ -55,7 +45,7 @@ User message:
 "${message}"
     `;
 
-    const chatResponse = await mistral.chat({
+    const response = await mistral.chat.completions.create({
       model: MODEL,
       messages: [
         { role: "system", content: "You are a helpful human assistant." },
@@ -65,12 +55,9 @@ User message:
     });
 
     const aiResponse =
-      chatResponse.choices?.[0]?.message?.content?.trim() ||
+      response.choices?.[0]?.message?.content ||
       "Sorry, I didn’t catch that.";
 
-    /* ===============================
-       MANYCHAT RESPONSE FORMAT (v2)
-    ================================ */
     return res.status(200).json({
       version: "v2",
       content: {
@@ -86,18 +73,15 @@ User message:
       }
     });
 
-  } catch (error) {
-    console.error("❌ Instagram Webhook Error:", error);
+  } catch (err) {
+    console.error("❌ Error:", err);
 
     return res.status(200).json({
       version: "v2",
       content: {
         type: "instagram",
         messages: [
-          {
-            type: "text",
-            text: "Something went wrong, try again in a bit."
-          }
+          { type: "text", text: "Something went wrong, try again later." }
         ]
       }
     });
@@ -108,5 +92,5 @@ User message:
    SERVER START
 ================================ */
 app.listen(PORT, () => {
-  console.log(`🚀 Instagram webhook server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
