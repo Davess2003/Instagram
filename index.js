@@ -13,7 +13,12 @@ const mistral = new Mistral({
   apiKey: process.env.MISTRAL_API_KEY
 });
 
+// Free plan safe
 const MODEL = "mistral-small-latest";
+
+// Conversation memory
+const conversations = new Map();
+const MAX_MESSAGES = 10; // user+assistant pairs
 
 /* ===============================
    HEALTH CHECK (ManyChat)
@@ -33,34 +38,66 @@ app.post("/webhook/instagram", async (req, res) => {
       return res.status(200).json({ version: "v2" });
     }
 
-    const prompt = `
+    /* ===============================
+       CONVERSATION MEMORY
+    ================================ */
+    let history = conversations.get(contact_id);
+
+    if (!history) {
+      history = [
+        {
+          role: "system",
+          content: `
 Reply like a normal human.
 Keep it short and conversational (1–2 sentences).
 Do not mention AI.
 
 Your name is Dave.
 If the user asks about Dave or wants Dave, reply that they’ll have to wait for him to answer.
+          `.trim()
+        }
+      ];
+    }
 
-User message:
-"${message}"
-    `;
+    // Add user message
+    history.push({
+      role: "user",
+      content: message
+    });
+
+    // Trim history to prevent token explosion
+    if (history.length > MAX_MESSAGES * 2 + 1) {
+      history = [
+        history[0], // system prompt
+        ...history.slice(-MAX_MESSAGES * 2)
+      ];
+    }
 
     /* ===============================
-       MISTRAL AI (CORRECT API)
+       MISTRAL AI
     ================================ */
     const result = await mistral.chat.complete({
       model: MODEL,
-      messages: [
-        { role: "system", content: "You are a helpful human assistant." },
-        { role: "user", content: prompt }
-      ],
+      messages: history,
       temperature: 0.7
     });
 
-    const aiResponse =
+    const aiReply =
       result.choices?.[0]?.message?.content?.trim() ||
       "Sorry, I didn’t catch that.";
 
+    // Add assistant reply
+    history.push({
+      role: "assistant",
+      content: aiReply
+    });
+
+    // Save conversation
+    conversations.set(contact_id, history);
+
+    /* ===============================
+       MANYCHAT RESPONSE (v2)
+    ================================ */
     return res.status(200).json({
       version: "v2",
       content: {
@@ -68,7 +105,7 @@ User message:
         messages: [
           {
             type: "text",
-            text: aiResponse
+            text: aiReply
           }
         ],
         actions: [],
@@ -77,14 +114,17 @@ User message:
     });
 
   } catch (err) {
-    console.error("❌ Error:", err);
+    console.error("❌ Webhook Error:", err);
 
     return res.status(200).json({
       version: "v2",
       content: {
         type: "instagram",
         messages: [
-          { type: "text", text: "Something went wrong, try again later." }
+          {
+            type: "text",
+            text: "Something went wrong, try again later."
+          }
         ]
       }
     });
@@ -95,5 +135,5 @@ User message:
    SERVER START
 ================================ */
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Instagram webhook server running on port ${PORT}`);
 });
