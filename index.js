@@ -45,8 +45,11 @@ User message:
 "${message}"
     `;
 
-    const response = await mistral.chat({
-      model: "mistral-small-3.2",
+    /* ===============================
+       MISTRAL AI (CORRECT API)
+    ================================ */
+    const result = await mistral.chat.complete({
+      model: MODEL,
       messages: [
         { role: "system", content: "You are a helpful human assistant." },
         { role: "user", content: prompt }
@@ -55,7 +58,7 @@ User message:
     });
 
     const aiResponse =
-      response.choices?.[0]?.message?.content?.trim() ||
+      result.choices?.[0]?.message?.content?.trim() ||
       "Sorry, I didn’t catch that.";
 
     return res.status(200).json({
