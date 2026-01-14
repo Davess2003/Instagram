@@ -11,12 +11,19 @@ from presidio_anonymizer.entities import OperatorConfig
 app = FastAPI()
 
 # ------------------------
-# Presidio setup (loaded ONCE)
+# Presidio setup (NO NLP ENGINE)
 # ------------------------
-analyzer = AnalyzerEngine()
+# 🚫 This disables spaCy completely
+analyzer = AnalyzerEngine(
+    nlp_engine=None,
+    supported_languages=["en"]
+)
+
 anonymizer = AnonymizerEngine()
 
-# SSN recognizer
+# ------------------------
+# Custom SSN recognizer (regex only)
+# ------------------------
 ssn_pattern = Pattern(
     name="us_ssn",
     regex=r"\b\d{3}-\d{2}-\d{4}\b",
@@ -41,17 +48,15 @@ class RedactRequest(BaseModel):
 # ------------------------
 @app.post("/redact")
 def redact_text(payload: RedactRequest):
-    text = payload.text
-
     results = analyzer.analyze(
-        text=text,
+        text=payload.text,
         language="en",
-        entities=None,
+        entities=None,        # detect ALL registered entities
         score_threshold=0.0
     )
 
     anonymized = anonymizer.anonymize(
-        text=text,
+        text=payload.text,
         analyzer_results=results,
         operators={
             "DEFAULT": OperatorConfig(
@@ -64,3 +69,4 @@ def redact_text(payload: RedactRequest):
     return {
         "redacted_text": anonymized.text
     }
+
