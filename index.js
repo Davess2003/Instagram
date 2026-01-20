@@ -1,5 +1,4 @@
 const express = require("express");
-const { Mistral } = require("@mistralai/mistralai");
 
 const app = express();
 app.use(express.json());
@@ -9,16 +8,9 @@ app.use(express.json());
 ================================ */
 const PORT = process.env.PORT || 3000;
 
-const mistral = new Mistral({
-  apiKey: process.env.MISTRAL_API_KEY
-});
-
-// Free plan safe
-const MODEL = "mistral-small-latest";
-
-// Conversation memory
-const conversations = new Map();
-const MAX_MESSAGES = 10; // user+assistant pairs
+// n8n webhook URL
+// Example: https://your-n8n-domain/webhook/instagram-ai
+const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL;
 
 /* ===============================
    HEALTH CHECK (ManyChat)
@@ -39,61 +31,28 @@ app.post("/webhook/instagram", async (req, res) => {
     }
 
     /* ===============================
-       CONVERSATION MEMORY
+       SEND TO n8n
     ================================ */
-    let history = conversations.get(contact_id);
-
-    if (!history) {
-      history = [
-        {
-          role: "system",
-          content: `
-Reply like a normal human.
-Keep it short and conversational (1–2 sentences).
-Do not mention AI.
-
-Your name is Dave.
-If the user asks about Dave or wants Dave, reply that they’ll have to wait for him to answer.
-          `.trim()
-        }
-      ];
-    }
-
-    // Add user message
-    history.push({
-      role: "user",
-      content: message
+    const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        contact_id,
+        message,
+        platform: "instagram"
+      })
     });
 
-    // Trim history to prevent token explosion
-    if (history.length > MAX_MESSAGES * 2 + 1) {
-      history = [
-        history[0], // system prompt
-        ...history.slice(-MAX_MESSAGES * 2)
-      ];
+    if (!n8nResponse.ok) {
+      throw new Error(`n8n error: ${n8nResponse.status}`);
     }
 
-    /* ===============================
-       MISTRAL AI
-    ================================ */
-    const result = await mistral.chat.complete({
-      model: MODEL,
-      messages: history,
-      temperature: 0.7
-    });
-
+    // IMPORTANT: n8n returns PLAIN TEXT
     const aiReply =
-      result.choices?.[0]?.message?.content?.trim() ||
+      (await n8nResponse.text()).trim() ||
       "Sorry, I didn’t catch that.";
-
-    // Add assistant reply
-    history.push({
-      role: "assistant",
-      content: aiReply
-    });
-
-    // Save conversation
-    conversations.set(contact_id, history);
 
     /* ===============================
        MANYCHAT RESPONSE (v2)
