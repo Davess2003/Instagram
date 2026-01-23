@@ -11,6 +11,7 @@ const PORT = process.env.PORT || 3000;
 // n8n webhook URL
 // Example: https://your-n8n-domain/webhook/instagram-ai
 const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL;
+const N8N_WEBHOOK_URL1 = process.env.N8N_WEBHOOK_URL1;
 
 /* ===============================
    HEALTH CHECK (ManyChat)
