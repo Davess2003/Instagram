@@ -163,8 +163,8 @@ app.post("/webhook/messenger", async (req, res) => {
       return res.status(200).json({ version: "v2" });
     }
 
-    // Send to n8n with Messenger platform identifier
-    const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
+    // Send to n8n with Messenger platform identifiers
+    const n8nResponse = await fetch(N8N_WEBHOOK_URL1, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
