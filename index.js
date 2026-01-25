@@ -168,7 +168,7 @@ app.post("/webhook/tiktok", async (req, res) => {
     }
 
     // Send to n8n with TikTok platform identifier
-    const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
+    const n8nResponse = await fetch(N8N_WEBHOOK_URL2, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
