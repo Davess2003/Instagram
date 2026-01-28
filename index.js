@@ -11,8 +11,6 @@ const PORT = process.env.PORT || 3000;
 // n8n webhook URL
 // Example: https://your-n8n-domain/webhook/instagram-ai
 const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL;
-const N8N_WEBHOOK_URL1 = process.env.N8N_WEBHOOK_URL1;
-const N8N_WEBHOOK_URL2 = process.env.N8N_WEBHOOK_URL2;
 
 /* ===============================
    HEALTH CHECK (ManyChat)
@@ -168,7 +166,7 @@ app.post("/webhook/tiktok", async (req, res) => {
     }
 
     // Send to n8n with TikTok platform identifier
-    const n8nResponse = await fetch(N8N_WEBHOOK_URL2, {
+    const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -233,7 +231,7 @@ app.post("/webhook/messenger", async (req, res) => {
     }
 
     // Send to n8n with Messenger platform identifiers
-    const n8nResponse = await fetch(N8N_WEBHOOK_URL1, {
+    const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
