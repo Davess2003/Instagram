@@ -243,6 +243,25 @@ app.post("/webhook/messenger", async (req, res) => {
       })
     });
 
+    // Send to n8n test webhook too (if defined)
+    if (process.env.N8N_WEBHOOK_URL_TEST) {
+      try {
+        await fetch(process.env.N8N_WEBHOOK_URL_TEST, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            contact_id,
+            message,
+            platform: "messenger"
+          })
+        });
+      } catch (testErr) {
+        console.error("❌ Messenger Test Webhook Error:", testErr);
+      }
+    }
+
     if (!n8nResponse.ok) {
       throw new Error(`n8n error: ${n8nResponse.status}`);
     }
