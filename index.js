@@ -300,7 +300,7 @@ app.post("/webhook/messenger", async (req, res) => {
       })
     });
 
-    // Send to n8n test webhook too (if defined)
+    // Send to n8n test webhook too (if defined yes)
     if (process.env.N8N_WEBHOOK_URL_TEST) {
       try {
         await fetch(process.env.N8N_WEBHOOK_URL_TEST, {
