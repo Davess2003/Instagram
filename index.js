@@ -45,6 +45,25 @@ app.post("/webhook/instagram", async (req, res) => {
       })
     });
 
+    // Send to n8n test webhook too (if defined)
+    if (process.env.N8N_WEBHOOK_URL_TEST) {
+      try {
+        await fetch(process.env.N8N_WEBHOOK_URL_TEST, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            contact_id,
+            message,
+            platform: "instagram"
+          })
+        });
+      } catch (testErr) {
+        console.error("❌ Instagram Test Webhook Error:", testErr);
+      }
+    }
+
     if (!n8nResponse.ok) {
       throw new Error(`n8n error: ${n8nResponse.status}`);
     }
@@ -110,6 +129,25 @@ app.post("/webhook/whatsapp", async (req, res) => {
         platform: "whatsapp"
       })
     });
+
+    // Send to n8n test webhook too (if defined)
+    if (process.env.N8N_WEBHOOK_URL_TEST) {
+      try {
+        await fetch(process.env.N8N_WEBHOOK_URL_TEST, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            contact_id,
+            message,
+            platform: "whatsapp"
+          })
+        });
+      } catch (testErr) {
+        console.error("❌ WhatsApp Test Webhook Error:", testErr);
+      }
+    }
 
     if (!n8nResponse.ok) {
       throw new Error(`n8n error: ${n8nResponse.status}`);
@@ -177,6 +215,25 @@ app.post("/webhook/tiktok", async (req, res) => {
         platform: "tiktok"
       })
     });
+
+    // Send to n8n test webhook too (if defined)
+    if (process.env.N8N_WEBHOOK_URL_TEST) {
+      try {
+        await fetch(process.env.N8N_WEBHOOK_URL_TEST, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            contact_id,
+            message,
+            platform: "tiktok"
+          })
+        });
+      } catch (testErr) {
+        console.error("❌ TikTok Test Webhook Error:", testErr);
+      }
+    }
 
     if (!n8nResponse.ok) {
       throw new Error(`n8n error: ${n8nResponse.status}`);
